@@ -3,6 +3,11 @@ import dash
 from dash.dependencies import Input, Output, State, ClientsideFunction
 import dash_core_components as dcc
 import dash_html_components as html
+import plotly.graph_objs as go
+
+from ccxt_datahandler import ccxt_datahandler
+import pandas as pd
+import datetime as dt
 
 ###Dash Styling guide
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -34,13 +39,36 @@ app.layout = html.Div(
                                     ],
                                 className = 'wrapper'),
                             html.Div(
-                                ###main graph
-                                children = [
-                                    html.H4('Risk levels'),
-                                    dcc.Graph(id="main-graph")],
-                                className="pretty_container")
-                            ],
-                className = 'wrapper')
 
+                                children = [
+                                    html.H4('Comparison of Gas Price Recommendations', style={"display": "flex", "flex-direction": "column",'margin-top':'0px'}),
+                                    dcc.Graph(id="main-graph"),
+                                    dcc.Interval(id='graph-update',interval=4*60*60 * 1000, n_intervals=0)],
+                                    className=" pretty_container",
+                                    style={'text-align':'center'})
+                        ],
+                className = 'wrapper')
+@app.callback(dash.dependencies.Output('main-graph', 'figure'),
+    [dash.dependencies.Input('graph-update', 'n_intervals')])
+def update(n_intervals):
+    data = ccxt_datahandler('BTC/USDT', 'poloniex', '1d')
+    # data['Date'] = pd.to_datetime(data.index).strftime('%y/%d')
+    print(data)
+    
+    layout = go.Layout(paper_bgcolor='rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',showlegend=True,xaxis={'title':'Associated Risk Crypto Currencies'},yaxis={'title':'Risk and Price'})
+
+    trace1 = go.Scatter(x=data.index,
+            y=data.Low,
+            name='low',
+            )
+    trace2 = go.Scatter(x=data.index,
+        y=data.Close,
+        name='close',
+        )
+    data = [trace1,trace2]
+    return go.Figure(data=data, layout=layout)
 if __name__ == "__main__":
+
     app.run_server(debug=True)
+
