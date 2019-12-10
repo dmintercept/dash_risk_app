@@ -8,6 +8,7 @@ import plotly.graph_objs as go
 from ccxt_datahandler import ccxt_datahandler
 import pandas as pd
 import datetime as dt
+import talib
 
 ###Dash Styling guide
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -52,18 +53,25 @@ app.layout = html.Div(
     [dash.dependencies.Input('graph-update', 'n_intervals')])
 def update(n_intervals):
     data = ccxt_datahandler('BTC/USDT', 'poloniex', '1d')
-    # data['Date'] = pd.to_datetime(data.index).strftime('%y/%d')
+    data['fast_MA'] = data.Close.rolling(window=10).mean()
+    data['slow_MA'] = data.Close.rolling(window=50).mean()
+    data['diff'] = data.fast_MA-data.slow_MA
+    data['fast_MA'] = talib.SMA(data.Close, timeperiod=10)
+    data['slow_MA'] = talib.SMA(data.Close, timeperiod=128)
+    data['diff'] = data.fast_MA-data.slow_MA
+    data['risk']=data['diff']/data['diff'].rolling(window=128).std()
+    data = data.dropna()
     print(data)
-    
+    #### use ((fast ma - slow ma/slow ma))/(std (difference/slow mac))
     layout = go.Layout(paper_bgcolor='rgba(0,0,0,0)',
-    plot_bgcolor='rgba(0,0,0,0)',showlegend=True,xaxis={'title':'Associated Risk Crypto Currencies'},yaxis={'title':'Risk and Price'})
+    plot_bgcolor='rgba(0,0,0,0)',showlegend=True,xaxis={'title':'Associated Risk Crypto Currencies'},yaxis={'title':'Risk and Price'},yaxis2={'title':'second y','side':'right'})
 
     trace1 = go.Scatter(x=data.index,
-            y=data.Low,
-            name='low',
+            y=data.risk,
+            name='risk',
             )
     trace2 = go.Scatter(x=data.index,
-        y=data.Close,
+        y=data.risk,
         name='close',
         )
     data = [trace1,trace2]
