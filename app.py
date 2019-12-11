@@ -52,14 +52,14 @@ app.layout = html.Div(
 @app.callback(dash.dependencies.Output('main-graph', 'figure'),
     [dash.dependencies.Input('graph-update', 'n_intervals')])
 def update(n_intervals):
-    data = ccxt_datahandler('BTC/USDT', 'poloniex', '1d')
+    data = ccxt_datahandler('ETH/USDT', 'poloniex', '4h')
     data['fast_MA'] = data.Close.rolling(window=10).mean()
     data['slow_MA'] = data.Close.rolling(window=50).mean()
     data['diff'] = data.fast_MA-data.slow_MA
-    data['fast_MA'] = talib.SMA(data.Close, timeperiod=10)
-    data['slow_MA'] = talib.SMA(data.Close, timeperiod=128)
+    data['fast_MA'] = talib.SMA(data.Close, timeperiod=21)
+    data['slow_MA'] = talib.SMA(data.Close, timeperiod=200)
     data['diff'] = data.fast_MA-data.slow_MA
-    data['risk']=data['diff']/data['diff'].rolling(window=128).std()
+    data['risk']=data['diff']/data['diff'].rolling(window=200).std()
     data = data.dropna()
     print(data)
     #### use ((fast ma - slow ma/slow ma))/(std (difference/slow mac))
