@@ -37,7 +37,7 @@ app.layout = html.Div(
                                 children = [
                                     html.H4('Short Term Trend Indicator', style={"display": "flex", "flex-direction": "column",'margin-top':'0px'}),
                                     dcc.Graph(id="main-graph"),
-                                    dcc.Interval(id='graph-update',interval=4*60*60 * 1000, n_intervals=0)],
+                                    dcc.Interval(id='graph-update',interval=0.25*60*60 * 900, n_intervals=0)],
                                     className=" pretty_container",
                                     style={'text-align':'center'}),
                             html.Div(
@@ -45,7 +45,7 @@ app.layout = html.Div(
                                 children = [
                                     html.H4('Long Term Trend Indicator', style={"display": "flex", "flex-direction": "column",'margin-top':'0px'}),
                                     dcc.Graph(id="main-graph-2"),
-                                    dcc.Interval(id='graph-update-2',interval=4*60*60 * 1000, n_intervals=0)],
+                                    dcc.Interval(id='graph-update-2',interval=.25*60*60 * 950, n_intervals=0)],
                                     className=" pretty_container",
                                     style={'text-align':'center'}),
                             html.Div(
@@ -53,7 +53,7 @@ app.layout = html.Div(
                                 children = [
                                     html.H4('Logarithmic Price Chart', style={"display": "flex", "flex-direction": "column",'margin-top':'0px'}),
                                     dcc.Graph(id="main-graph-3"),
-                                    dcc.Interval(id='graph-update-3',interval=4*60*60 * 1000, n_intervals=0)],
+                                    dcc.Interval(id='graph-update-3',interval=0.25*60*60 * 1000, n_intervals=0)],
                                     className=" pretty_container",
                                     style={'text-align':'center'}),
                             
@@ -70,7 +70,7 @@ def update(n_intervals):
     data['slow_MA'] = talib.SMA(data.Close, timeperiod=200)
     data['diff'] = data.fast_MA-data.slow_MA
     data['risk']=((data['diff']/data['diff'].rolling(window=200).std())**1)
-    
+    data = data.loc['2016-11-11 01:00:00':]
     data = data.dropna()
     print(data)
     #### use ((fast ma - slow ma/slow ma))/(std (difference/slow mac))
@@ -99,9 +99,9 @@ def update(n_intervals):
     data['slow_MA'] = talib.SMA(data.Close, timeperiod=1200)
     data['diff'] = data.fast_MA-data.slow_MA
     data['risk']=((data['diff']/data['diff'].rolling(window=1200).std())**1)
-    
+    data = data.loc['2016-11-11 01:00:00':]
     data = data.dropna()
-    print(data)
+    # print(data)
     #### use ((fast ma - slow ma/slow ma))/(std (difference/slow mac))
     layout = go.Layout(paper_bgcolor='rgba(0,0,0,0)',
     plot_bgcolor='rgba(0,0,0,0)',showlegend=True,xaxis={'title':'Date'},yaxis={'title':'Long Term Oscilator'},yaxis2={'title':'second y','side':'right'})
@@ -123,6 +123,7 @@ def update(n_intervals):
     data = ccxt_datahandler('ETH/USDT', 'poloniex', '4h')    
     data = data.dropna()
     data['log_close'] = np.log(data['Close'])
+    data = data.loc['2016-11-11 01:00:00':]
     layout = go.Layout(paper_bgcolor='rgba(0,0,0,0)',
     plot_bgcolor='rgba(0,0,0,0)',showlegend=True,xaxis={'title':'Date'},yaxis={'title':'Logarithmic Price'},yaxis2={'title':'second y','side':'right'})
 
