@@ -11,7 +11,7 @@ import numpy as np
 import datetime as dt
 import talib
 
-###Dash Styling guide
+###Dash Styling guide 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(
@@ -41,7 +41,6 @@ app.layout = html.Div(
                                     className=" pretty_container",
                                     style={'text-align':'center'}),
                             html.Div(
-
                                 children = [
                                     html.H4('Long Term Trend Indicator', style={"display": "flex", "flex-direction": "column",'margin-top':'0px'}),
                                     dcc.Graph(id="main-graph-2"),
@@ -49,7 +48,6 @@ app.layout = html.Div(
                                     className=" pretty_container",
                                     style={'text-align':'center'}),
                             html.Div(
-
                                 children = [
                                     html.H4('Logarithmic Price Chart', style={"display": "flex", "flex-direction": "column",'margin-top':'0px'}),
                                     dcc.Graph(id="main-graph-3"),
@@ -62,16 +60,15 @@ app.layout = html.Div(
 @app.callback(dash.dependencies.Output('main-graph', 'figure'),
     [dash.dependencies.Input('graph-update', 'n_intervals')])
 def update(n_intervals):
-    data = ccxt_datahandler('ETH/USDT', 'poloniex', '4h')
+    data = ccxt_datahandler('BTC/USDT', 'poloniex', '4h')
     data['fast_MA'] = data.Close.rolling(window=10).mean()
     data['slow_MA'] = data.Close.rolling(window=50).mean()
     data['diff'] = data.fast_MA-data.slow_MA
     data['fast_MA'] = talib.SMA(data.Close, timeperiod=50)
     data['slow_MA'] = talib.SMA(data.Close, timeperiod=200)
     data['diff'] = data.fast_MA-data.slow_MA
-    data['risk']=((data['diff']/data['diff'].rolling(window=200).std())**1)
-    data = data.loc['2016-11-11 01:00:00':]
-    data = data.dropna()
+    data['risk']=((data['diff']-data['diff'].rolling(window=125).mean())/data['diff'].rolling(window=125).std()**1)
+    data = data.loc[:]
     print(data)
     #### use ((fast ma - slow ma/slow ma))/(std (difference/slow mac))
     layout = go.Layout(paper_bgcolor='rgba(0,0,0,0)',
@@ -91,16 +88,15 @@ def update(n_intervals):
 @app.callback(dash.dependencies.Output('main-graph-2', 'figure'),
     [dash.dependencies.Input('graph-update-2', 'n_intervals')])
 def update(n_intervals):
-    data = ccxt_datahandler('ETH/USDT', 'poloniex', '4h')
+    data = ccxt_datahandler('BTC/USDT', 'poloniex', '4h')
     data['fast_MA'] = data.Close.rolling(window=10).mean()
     data['slow_MA'] = data.Close.rolling(window=50).mean()
     data['diff'] = data.fast_MA-data.slow_MA
     data['fast_MA'] = talib.SMA(data.Close, timeperiod=300)
-    data['slow_MA'] = talib.SMA(data.Close, timeperiod=1200)
+    data['slow_MA'] = talib.SMA(data.Close, timeperiod=2100)
     data['diff'] = data.fast_MA-data.slow_MA
-    data['risk']=((data['diff']/data['diff'].rolling(window=1200).std())**1)
-    data = data.loc['2016-11-11 01:00:00':]
-    data = data.dropna()
+    data['risk']=((data['diff']-data['diff'].rolling(window=1200).mean())/data['diff'].rolling(window=1200).std()**1)
+    data = data.loc[:]
     # print(data)
     #### use ((fast ma - slow ma/slow ma))/(std (difference/slow mac))
     layout = go.Layout(paper_bgcolor='rgba(0,0,0,0)',
@@ -120,10 +116,10 @@ def update(n_intervals):
 @app.callback(dash.dependencies.Output('main-graph-3', 'figure'),
     [dash.dependencies.Input('graph-update-3', 'n_intervals')])
 def update(n_intervals):
-    data = ccxt_datahandler('ETH/USDT', 'poloniex', '4h')    
-    data = data.dropna()
-    data['log_close'] = np.log(data['Close'])
-    data = data.loc['2016-11-11 01:00:00':]
+    data = ccxt_datahandler('BTC/USDT', 'poloniex', '4h')    
+    # data['log_close'] = np.log(data['Close'])
+    data['log_close'] = data['Close']
+    data = data.loc[:]
     layout = go.Layout(paper_bgcolor='rgba(0,0,0,0)',
     plot_bgcolor='rgba(0,0,0,0)',showlegend=True,xaxis={'title':'Date'},yaxis={'title':'Logarithmic Price'},yaxis2={'title':'second y','side':'right'})
 
@@ -137,7 +133,8 @@ def update(n_intervals):
         )
     data = [trace1,trace2]
     return go.Figure(data=data, layout=layout)
-if __name__ == "__main__":
 
+###use log values with rolling means as it could be a better representation with the mean removing the slightly linear increase
+if __name__ == "__main__":
     app.run_server(debug=True)
 
