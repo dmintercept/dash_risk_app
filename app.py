@@ -19,6 +19,69 @@ app = dash.Dash(
      meta_tags=[{"name": "viewport", "content": "width=device-width"}],
      external_stylesheets=external_stylesheets
 )
+def SetColor(x):
+    if x < 0:
+        return 'red'
+    elif x==0:
+        return 'blue'
+    else:
+        return 'green'
+def oscillator(data,short,long,log):
+    if log:
+        data['fast_MA'] = talib.SMA(np.log(data.Close), timeperiod=short)
+        data['slow_MA'] = talib.SMA(np.log(data.Close), timeperiod=long)
+    else:
+        data['fast_MA'] = talib.SMA(data.Close, timeperiod=short)
+        data['slow_MA'] = talib.SMA(data.Close, timeperiod=long)
+    data['diff'] = data.fast_MA-data.slow_MA
+    data['risk']=((data['diff']-data['diff'].rolling(window=long).mean())/data['diff'].rolling(window=long).std()**1)
+    data['risk_diff']=data['risk'].rolling(window=2).apply(lambda x: x[1] - x[0],raw=False)
+    return data
+def plot(data,pair,term):
+    layout = go.Layout(
+    paper_bgcolor='rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
+    showlegend=True,
+    xaxis={'title':'Date'},
+    yaxis={'title':pair+' '+term+' Term Oscilator'})
+    trace1 = go.Scatter(
+                x=data.index,
+                y=data.risk,
+                mode='markers+lines',
+                name='z-score',
+                marker=dict(size=4, color = list(map(SetColor, data['risk_diff']))),
+                line=dict(color='rgb(200,200,200)')
+            )
+    data = [trace1]
+    return go.Figure(data=data, layout=layout)
+def close_plot(data,log,pair):
+    layout = go.Layout(
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        showlegend=True,
+        xaxis={'title':'Date'},
+        yaxis={'title':pair+' Close'})
+    trace1 = go.Scatter(
+                x=data.index,
+                y=data.Close,
+                mode='lines',
+                name='Close',
+                line=dict(color='blue')
+            )
+    data = [trace1]
+    return go.Figure(data=data, layout=layout)
+
+###parameters
+pair = 'BTC/USDT'
+exchange = 'poloniex'
+time = '4h'
+short_short = 20
+short_long = 70
+long_short = 100
+long_long = 700
+
+#initial load of data
+data = ccxt_datahandler(pair,exchange,time).resample('720min').last()
 
 server = app.server
 
@@ -35,23 +98,23 @@ app.layout = html.Div(
                             html.Div(
 
                                 children = [
-                                    html.H4('Short Term Trend Indicator', style={"display": "flex", "flex-direction": "column",'margin-top':'0px'}),
+                                    # html.H4('Long Term Trend', style={"display": "flex", "flex-direction": "column",'margin-top':'0px'}),
                                     dcc.Graph(id="main-graph"),
-                                    dcc.Interval(id='graph-update',interval=0.25*60*60 * 900, n_intervals=0)],
+                                    dcc.Interval(id='graph-update',interval=15*60*1000, n_intervals=0)],
                                     className=" pretty_container",
                                     style={'text-align':'center'}),
                             html.Div(
                                 children = [
-                                    html.H4('Long Term Trend Indicator', style={"display": "flex", "flex-direction": "column",'margin-top':'0px'}),
+                                    # html.H4('Short Term Trend', style={"display": "flex", "flex-direction": "column",'margin-top':'0px'}),
                                     dcc.Graph(id="main-graph-2"),
-                                    dcc.Interval(id='graph-update-2',interval=.25*60*60 * 950, n_intervals=0)],
+                                    dcc.Interval(id='graph-update-2',interval=15*60 * 1000, n_intervals=0)],
                                     className=" pretty_container",
                                     style={'text-align':'center'}),
                             html.Div(
                                 children = [
-                                    html.H4('Logarithmic Price Chart', style={"display": "flex", "flex-direction": "column",'margin-top':'0px'}),
+                                    # html.H4(pair+' Price Chart', style={"display": "flex", "flex-direction": "column",'margin-top':'0px'}),
                                     dcc.Graph(id="main-graph-3"),
-                                    dcc.Interval(id='graph-update-3',interval=0.25*60*60 * 1000, n_intervals=0)],
+                                    dcc.Interval(id='graph-update-3',interval=15*60 * 1000, n_intervals=0)],
                                     className=" pretty_container",
                                     style={'text-align':'center'}),
                             
@@ -60,79 +123,20 @@ app.layout = html.Div(
 @app.callback(dash.dependencies.Output('main-graph', 'figure'),
     [dash.dependencies.Input('graph-update', 'n_intervals')])
 def update(n_intervals):
-    data = ccxt_datahandler('BTC/USDT', 'poloniex', '4h')
-    data['fast_MA'] = data.Close.rolling(window=10).mean()
-    data['slow_MA'] = data.Close.rolling(window=50).mean()
-    data['diff'] = data.fast_MA-data.slow_MA
-    data['fast_MA'] = talib.SMA(data.Close, timeperiod=50)
-    data['slow_MA'] = talib.SMA(data.Close, timeperiod=200)
-    data['diff'] = data.fast_MA-data.slow_MA
-    data['risk']=((data['diff']-data['diff'].rolling(window=125).mean())/data['diff'].rolling(window=125).std()**1)
-    data = data.loc[:]
-    print(data)
-    #### use ((fast ma - slow ma/slow ma))/(std (difference/slow mac))
-    layout = go.Layout(paper_bgcolor='rgba(0,0,0,0)',
-    plot_bgcolor='rgba(0,0,0,0)',showlegend=True,xaxis={'title':'Date'},yaxis={'title':'Short Term Oscilator'},yaxis2={'title':'second y','side':'right'})
-
-    trace1 = go.Scatter(x=data.index,
-            y=data.risk,
-            name='risk',
-            )
-    trace2 = go.Scatter(x=data.index,
-        y=data.risk,
-        name='close',
-        )
-    data = [trace1,trace2]
-    return go.Figure(data=data, layout=layout)
+    data = ccxt_datahandler(pair, exchange, time).resample('720min').last()
+    return plot(oscillator(data, long_short, long_long, False),pair,'long')
 
 @app.callback(dash.dependencies.Output('main-graph-2', 'figure'),
     [dash.dependencies.Input('graph-update-2', 'n_intervals')])
 def update(n_intervals):
-    data = ccxt_datahandler('BTC/USDT', 'poloniex', '4h')
-    data['fast_MA'] = data.Close.rolling(window=10).mean()
-    data['slow_MA'] = data.Close.rolling(window=50).mean()
-    data['diff'] = data.fast_MA-data.slow_MA
-    data['fast_MA'] = talib.SMA(data.Close, timeperiod=300)
-    data['slow_MA'] = talib.SMA(data.Close, timeperiod=2100)
-    data['diff'] = data.fast_MA-data.slow_MA
-    data['risk']=((data['diff']-data['diff'].rolling(window=1200).mean())/data['diff'].rolling(window=1200).std()**1)
-    data = data.loc[:]
-    # print(data)
-    #### use ((fast ma - slow ma/slow ma))/(std (difference/slow mac))
-    layout = go.Layout(paper_bgcolor='rgba(0,0,0,0)',
-    plot_bgcolor='rgba(0,0,0,0)',showlegend=True,xaxis={'title':'Date'},yaxis={'title':'Long Term Oscilator'},yaxis2={'title':'second y','side':'right'})
-
-    trace1 = go.Scatter(x=data.index,
-            y=data.risk,
-            name='risk',
-            )
-    trace2 = go.Scatter(x=data.index,
-        y=data.risk,
-        name='close',
-        )
-    data = [trace1,trace2]
-    return go.Figure(data=data, layout=layout)
+    #long term indicator
+    return plot(oscillator(data, short_short, short_long, False), pair,'short')
 
 @app.callback(dash.dependencies.Output('main-graph-3', 'figure'),
     [dash.dependencies.Input('graph-update-3', 'n_intervals')])
 def update(n_intervals):
-    data = ccxt_datahandler('BTC/USDT', 'poloniex', '4h')    
-    # data['log_close'] = np.log(data['Close'])
-    data['log_close'] = data['Close']
-    data = data.loc[:]
-    layout = go.Layout(paper_bgcolor='rgba(0,0,0,0)',
-    plot_bgcolor='rgba(0,0,0,0)',showlegend=True,xaxis={'title':'Date'},yaxis={'title':'Logarithmic Price'},yaxis2={'title':'second y','side':'right'})
-
-    trace1 = go.Scatter(x=data.index,
-            y=data.log_close,
-            name='risk',
-            )
-    trace2 = go.Scatter(x=data.index,
-        y=data.log_close,
-        name='close',
-        )
-    data = [trace1,trace2]
-    return go.Figure(data=data, layout=layout)
+    #close
+    return close_plot(data, False, pair)
 
 ###use log values with rolling means as it could be a better representation with the mean removing the slightly linear increase
 if __name__ == "__main__":
