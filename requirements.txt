@@ -1,15 +1,10 @@
-backtrader==1.9.74.123
 ccxt==1.20.69
 dash==1.7.0
 dash-core-components==1.6.0
 dash-html-components==1.0.2
 dash-renderer==1.2.2
 dash-table==4.5.1
-Flask==1.1.1
-Flask-Compress==1.4.0
 matplotlib==3.1.1
 numpy==1.16.2
-openpyxl==3.0.2
 pandas==0.24.2
 plotly==4.3.0
-TA-Lib==0.4.17

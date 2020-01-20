@@ -9,7 +9,6 @@ from ccxt_datahandler import ccxt_datahandler
 import pandas as pd
 import numpy as np
 import datetime as dt
-import talib
 
 ###Dash Styling guide 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -28,11 +27,11 @@ def SetColor(x):
         return 'green'
 def oscillator(data,short,long,log):
     if log:
-        data['fast_MA'] = talib.SMA(np.log(data.Close), timeperiod=short)
-        data['slow_MA'] = talib.SMA(np.log(data.Close), timeperiod=long)
+        data['fast_MA'] = np.log(data['Close']).rolling(window=short).mean()
+        data['fast_MA'] = np.log(data['Close']).rolling(window=long).mean()
     else:
-        data['fast_MA'] = talib.SMA(data.Close, timeperiod=short)
-        data['slow_MA'] = talib.SMA(data.Close, timeperiod=long)
+        data['fast_MA'] = data['Close'].rolling(window=short).mean()
+        data['slow_MA'] = data['Close'].rolling(window=long).mean()
     data['diff'] = data.fast_MA-data.slow_MA
     data['risk']=((data['diff']-data['diff'].rolling(window=long).mean())/data['diff'].rolling(window=long).std()**1)
     data['risk_diff']=data['risk'].rolling(window=2).apply(lambda x: x[1] - x[0],raw=False)
@@ -140,5 +139,5 @@ def update(n_intervals):
 
 ###use log values with rolling means as it could be a better representation with the mean removing the slightly linear increase
 if __name__ == "__main__":
-    app.run_server(debug=True,port=8000)
+    app.run_server(debug=True,port=8005)
 
