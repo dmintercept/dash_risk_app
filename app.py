@@ -139,5 +139,5 @@ def update(n_intervals):
 
 ###use log values with rolling means as it could be a better representation with the mean removing the slightly linear increase
 if __name__ == "__main__":
-    app.run_server(debug=True,port=8005)
+    app.run_server(debug=False)
 
