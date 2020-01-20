@@ -74,8 +74,8 @@ def close_plot(data,log,pair):
 pair = 'BTC/USDT'
 exchange = 'poloniex'
 time = '4h'
-short_short = 20
-short_long = 70
+short_short = 16
+short_long = 66
 long_short = 100
 long_long = 700
 
