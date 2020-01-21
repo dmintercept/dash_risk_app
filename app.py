@@ -25,13 +25,14 @@ def SetColor(x):
         return 'blue'
     else:
         return 'green'
-def oscillator(data,short,long,log):
-    if log:
-        data['fast_MA'] = np.log(data['Close']).rolling(window=short).mean()
-        data['fast_MA'] = np.log(data['Close']).rolling(window=long).mean()
-    else:
-        data['fast_MA'] = data['Close'].rolling(window=short).mean()
-        data['slow_MA'] = data['Close'].rolling(window=long).mean()
+def oscillator(data,short,long):
+    # Experimental Hull Moving Average Calculation
+    # Calculate a Weighted Moving Average with period n / 2 and multiply it by 2
+    # Calculate a Weighted Moving Average for period n and subtract if from step 1
+    # Calculate a Weighted Moving Average with period sqrt(n) using the data from step 2
+    # HMA= WMA(2*WMA(n/2) − WMA(n)),sqrt(n))
+    data['fast_MA'] = data['Close'].rolling(window=short).mean()
+    data['slow_MA'] = data['Close'].rolling(window=long).mean()
     data['diff'] = data.fast_MA-data.slow_MA
     data['risk']=((data['diff']-data['diff'].rolling(window=long).mean())/data['diff'].rolling(window=long).std()**1)
     data['risk_diff']=data['risk'].rolling(window=2).apply(lambda x: x[1] - x[0],raw=False)
@@ -123,13 +124,13 @@ app.layout = html.Div(
     [dash.dependencies.Input('graph-update', 'n_intervals')])
 def update(n_intervals):
     data = ccxt_datahandler(pair, exchange, time).resample('720min').last()
-    return plot(oscillator(data, long_short, long_long, False),pair,'long')
+    return plot(oscillator(data, long_short, long_long),pair,'long')
 
 @app.callback(dash.dependencies.Output('main-graph-2', 'figure'),
     [dash.dependencies.Input('graph-update-2', 'n_intervals')])
 def update(n_intervals):
     #long term indicator
-    return plot(oscillator(data, short_short, short_long, False), pair,'short')
+    return plot(oscillator(data, short_short, short_long), pair,'short')
 
 @app.callback(dash.dependencies.Output('main-graph-3', 'figure'),
     [dash.dependencies.Input('graph-update-3', 'n_intervals')])
@@ -139,5 +140,5 @@ def update(n_intervals):
 
 ###use log values with rolling means as it could be a better representation with the mean removing the slightly linear increase
 if __name__ == "__main__":
-    app.run_server(debug=False)
+    app.run_server(debug=False,port=8020)
 
