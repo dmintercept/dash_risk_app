@@ -75,8 +75,8 @@ def close_plot(data,log,pair):
 pair = 'BTC/USDT'
 exchange = 'poloniex'
 time = '4h'
-short_short = 16
-short_long = 66
+short_short = 20
+short_long = 100
 long_short = 100
 long_long = 700
 
@@ -140,5 +140,5 @@ def update(n_intervals):
 
 ###use log values with rolling means as it could be a better representation with the mean removing the slightly linear increase
 if __name__ == "__main__":
-    app.run_server(debug=False,port=8020)
+    app.run_server(debug=True,port=8000)
 
